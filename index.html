@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NeoSpeak — Text to Speech</title>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #111826;
+      --panel-2: #0f1520;
+      --text: #f3f5f7;
+      --muted: #a7b0bd;
+      --primary: #4f7cff;
+      --primary-2: #7aa2ff;
+      --accent: #22d3ee;
+      --accent-2: #2dd4bf;
+      --danger: #ff6171;
+      --ring: rgba(79,124,255,0.35);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 80% -10%, rgba(79,124,255,0.2), transparent 60%),
+                  radial-gradient(900px 700px at 0% 100%, rgba(45,212,191,0.15), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .wrap {
+      max-width: 1000px;
+      padding: 24px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: conic-gradient(from 220deg, var(--primary), var(--accent));
+      box-shadow: 0 0 0 6px rgba(79,124,255,0.15), 0 10px 30px rgba(34,211,238,0.25);
+    }
+    h1 {
+      font-size: 20px;
+      margin: 0;
+      letter-spacing: 0.2px;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent),
+                  linear-gradient(0deg, rgba(255,255,255,0.02), transparent),
+                  var(--panel);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.02);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 920px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .textarea {
+      position: relative;
+    }
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      resize: vertical;
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 14px 14px 48px 14px;
+      font-size: 16px;
+      line-height: 1.5;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 6px var(--ring);
+    }
+    .counter {
+      position: absolute;
+      right: 12px;
+      bottom: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      user-select: none;
+    }
+
+    .panel {
+      display: grid;
+      gap: 14px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .row3 {
+      display: grid;
+      grid-template-columns: 0.9fr 1.4fr 0.8fr;
+      gap: 12px;
+    }
+    @media (max-width: 560px) {
+      .row, .row3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    select, input[type="range"] {
+      width: 100%;
+      background: var(--panel-2);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text);
+      padding: 10px 10px;
+      border-radius: 10px;
+      outline: none;
+    }
+    select:focus, input[type="range"]:focus {
+      box-shadow: 0 0 0 6px var(--ring);
+      border-color: var(--primary);
+    }
+
+    .voice-modes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 560px) {
+      .voice-modes { grid-template-columns: 1fr; }
+    }
+    .mode {
+      position: relative;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent),
+                  var(--panel-2);
+      cursor: pointer;
+      transition: transform .08s ease, border-color .2s ease, background .2s ease;
+      user-select: none;
+    }
+    .mode:hover { transform: translateY(-1px); }
+    .mode.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 6px var(--ring);
+      background: linear-gradient(180deg, rgba(79,124,255,0.08), transparent),
+                  var(--panel-2);
+    }
+    .mode-title { font-size: 14px; margin: 0 0 4px 0; }
+    .mode-sub { font-size: 12px; color: var(--muted); }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent),
+                  var(--panel-2);
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform .06s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+    button:hover { transform: translateY(-1px); }
+    button.primary {
+      background: linear-gradient(180deg, var(--primary-2), var(--primary));
+      border-color: rgba(255,255,255,0.18);
+      color: white;
+      box-shadow: 0 12px 30px rgba(79,124,255,0.35);
+    }
+    button.secondary {
+      background: linear-gradient(180deg, rgba(34,211,238,0.4), rgba(34,211,238,0.25));
+      border-color: rgba(255,255,255,0.18);
+      color: #07131a;
+    }
+    button.danger {
+      background: linear-gradient(180deg, rgba(255,97,113,0.6), rgba(255,97,113,0.45));
+      border-color: rgba(255,255,255,0.18);
+      color: #22060a;
+    }
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    footer {
+      margin-top: 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 999px;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 999px; background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>NeoSpeak</h1>
+          <div class="sub">Modern one‑page Text‑to‑Speech</div>
+        </div>
+      </div>
+      <div class="pill"><span class="dot"></span> Web Speech API</div>
+    </header>
+
+    <div class="grid">
+      <div class="card textarea">
+        <label for="text">Enter text</label>
+        <textarea id="text" placeholder="Type or paste text to speak...">Welcome to NeoSpeak, a modern text to speech web app with multiple voice modes. Enjoy!</textarea>
+        <div class="counter" id="counter">0 chars</div>
+      </div>
+
+      <div class="card panel">
+        <div class="row3">
+          <div>
+            <label for="language">Language</label>
+            <select id="language"></select>
+          </div>
+          <div>
+            <label for="voice">Voice</label>
+            <select id="voice"></select>
+          </div>
+          <div>
+            <label for="gender">Gender</label>
+            <select id="gender">
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="rate">Rate: <span id="rateVal">1.0</span></label>
+            <input type="range" id="rate" min="0.5" max="1.75" step="0.05" value="1.0" />
+          </div>
+          <div>
+            <label for="pitch">Pitch: <span id="pitchVal">1.0</span></label>
+            <input type="range" id="pitch" min="0.5" max="2" step="0.05" value="1.0" />
+          </div>
+        </div>
+
+        <div>
+          <label>Voice modes</label>
+          <div class="voice-modes" id="modes">
+            <div class="mode" data-mode="male1">
+              <div class="mode-title">Male 1 — Warm</div>
+              <div class="mode-sub">Balanced, friendly</div>
+            </div>
+            <div class="mode" data-mode="male2">
+              <div class="mode-title">Male 2 — Deep</div>
+              <div class="mode-sub">Lower pitch, steady</div>
+            </div>
+            <div class="mode" data-mode="male3">
+              <div class="mode-title">Male 3 — Clear</div>
+              <div class="mode-sub">Crisp articulation</div>
+            </div>
+            <div class="mode" data-mode="female1">
+              <div class="mode-title">Female 1 — Bright</div>
+              <div class="mode-sub">Lively, expressive</div>
+            </div>
+            <div class="mode" data-mode="female2">
+              <div class="mode-title">Female 2 — Soft</div>
+              <div class="mode-sub">Gentle, smooth</div>
+            </div>
+            <div class="mode" data-mode="female3">
+              <div class="mode-title">Female 3 — Neutral</div>
+              <div class="mode-sub">Balanced clarity</div>
+            </div>
+          </div>
+          <div class="small">Tip: Presets will try to pick a suitable voice and adjust rate/pitch. You can fine‑tune after selecting.</div>
+        </div>
+
+        <div class="controls">
+          <button class="primary" id="btnSpeak">Speak</button>
+          <button class="secondary" id="btnPause">Pause</button>
+          <button class="secondary" id="btnResume">Resume</button>
+          <button class="danger" id="btnStop">Stop</button>
+          <button id="btnGetVoices">Get More Voices</button>
+        </div>
+
+        <div class="small" id="status">Ready.</div>
+      </div>
+    </div>
+
+    <footer>
+      <div>Voices depend on OS/browser. For more options, install system TTS voices and refresh.</div>
+      <div class="pill">© 2025 NeoSpeak</div>
+    </footer>
+  </div>
+
+  <script>
+    const textEl = document.getElementById('text');
+    const counterEl = document.getElementById('counter');
+    const langEl = document.getElementById('language');
+    const voiceEl = document.getElementById('voice');
+    const genderEl = document.getElementById('gender');
+    const rateEl = document.getElementById('rate');
+    const pitchEl = document.getElementById('pitch');
+    const rateVal = document.getElementById('rateVal');
+    const pitchVal = document.getElementById('pitchVal');
+    const modesEl = document.getElementById('modes');
+    const statusEl = document.getElementById('status');
+
+    const btnSpeak = document.getElementById('btnSpeak');
+    const btnPause = document.getElementById('btnPause');
+    const btnResume = document.getElementById('btnResume');
+    const btnStop = document.getElementById('btnStop');
+    const btnGetVoices = document.getElementById('btnGetVoices');
+
+    let voices = [];
+    let currentUtterance = null;
+    let desiredLang = null;
+    let selectedGender = 'female';
+
+    genderEl.value = selectedGender;
+
+    function getGenderHintRegex(gender) {
+      return gender === 'male'
+        ? /(male|man|microsoft (david|guy)|fred|daniel|alex)/i
+        : /(female|woman|samantha|victoria|karen|zira|zira pro|serena|zira neural|zoe|microsoft aria|microsoft zira)/i;
+    }
+
+    function updateCounter() {
+      const len = textEl.value.trim().length;
+      counterEl.textContent = len + ' chars';
+    }
+    updateCounter();
+    textEl.addEventListener('input', updateCounter);
+
+    function loadVoices() {
+      voices = speechSynthesis.getVoices().sort((a, b) => a.name.localeCompare(b.name));
+      populateLanguages();
+      populateVoices();
+    }
+
+    function uniqueLanguages(list) {
+      const langs = new Map();
+      list.forEach(v => {
+        const base = v.lang || 'en-US';
+        const key = base.toLowerCase();
+        if (!langs.has(key)) langs.set(key, { label: base, count: 1 });
+        else langs.get(key).count++;
+      });
+      return Array.from(langs.keys()).sort();
+    }
+
+    function populateLanguages() {
+      const langs = uniqueLanguages(voices);
+      langEl.innerHTML = '';
+      langs.forEach(code => {
+        const opt = document.createElement('option');
+        opt.value = code;
+        opt.textContent = code;
+        langEl.appendChild(opt);
+      });
+      // Default to English if available
+      const hasEn = langs.find(x => x.startsWith('en'));
+      desiredLang = hasEn || langs[0] || 'en-US';
+      langEl.value = desiredLang;
+    }
+
+    function populateVoices() {
+      const lang = langEl.value || desiredLang || 'en-US';
+      const byLanguage = voices.filter(v => (v.lang || '').toLowerCase().startsWith(lang.split('-')[0].toLowerCase()));
+      const genderHints = getGenderHintRegex(selectedGender);
+      const genderFiltered = byLanguage.filter(v => genderHints.test(v.name));
+      const filtered = genderFiltered.length ? genderFiltered : byLanguage;
+      voiceEl.innerHTML = '';
+      filtered.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.name;
+        opt.textContent = `${v.name} (${v.lang})${v.default ? ' — default' : ''}`;
+        voiceEl.appendChild(opt);
+      });
+      if (filtered.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'No voices available for this language';
+        voiceEl.appendChild(opt);
+      }
+    }
+
+    langEl.addEventListener('change', () => {
+      desiredLang = langEl.value;
+      populateVoices();
+    });
+
+    genderEl.addEventListener('change', () => {
+      selectedGender = genderEl.value;
+      populateVoices();
+
+      const activeMode = document.querySelector('.mode.active');
+      if (activeMode) {
+        const modeGender = activeMode.dataset.mode.startsWith('female') ? 'female' : 'male';
+        if (modeGender !== selectedGender) {
+          activeMode.classList.remove('active');
+        }
+      }
+    });
+
+    function pickVoiceByGender(gender, langBase) {
+      const base = (langBase || desiredLang || 'en').split('-')[0].toLowerCase();
+      const candidates = voices.filter(v => (v.lang || '').toLowerCase().startsWith(base));
+      if (candidates.length === 0) return voices[0] || null;
+
+      // Heuristic by name contains hints like "Male/Female/Man/Woman"
+      const genderHints = getGenderHintRegex(gender);
+
+      const byHint = candidates.find(v => genderHints.test(v.name));
+      if (byHint) return byHint;
+
+      // Fallback: return first available candidate
+      return candidates[0] || null;
+    }
+
+    function setPreset(mode) {
+      const base = desiredLang || 'en-US';
+      let gender = 'male';
+      let rate = 1.0;
+      let pitch = 1.0;
+
+      switch (mode) {
+        case 'male1': gender = 'male'; rate = 1.02; pitch = 1.0; break;       // warm
+        case 'male2': gender = 'male'; rate = 0.92; pitch = 0.9; break;       // deep
+        case 'male3': gender = 'male'; rate = 1.05; pitch = 1.05; break;      // clear
+        case 'female1': gender = 'female'; rate = 1.08; pitch = 1.12; break;  // bright
+        case 'female2': gender = 'female'; rate = 0.98; pitch = 1.05; break;  // soft
+        case 'female3': gender = 'female'; rate = 1.0; pitch = 1.0; break;    // neutral
+      }
+
+      selectedGender = gender;
+      genderEl.value = selectedGender;
+
+      const v = pickVoiceByGender(gender, base);
+      if (v) {
+        // Set language dropdown to the voice language base if different
+        const baseCode = (v.lang || base).toLowerCase();
+        const options = Array.from(langEl.options).map(o => o.value);
+        const preferred = options.find(x => baseCode.startsWith(x.split('-')[0].toLowerCase()));
+        if (preferred) {
+          langEl.value = preferred;
+          desiredLang = preferred;
+          populateVoices();
+        }
+        // Select the matched voice if present
+        const found = Array.from(voiceEl.options).find(o => o.value === v.name);
+        if (found) voiceEl.value = v.name;
+      }
+
+      rateEl.value = rate.toFixed(2);
+      pitchEl.value = pitch.toFixed(2);
+      rateVal.textContent = rateEl.value;
+      pitchVal.textContent = pitchEl.value;
+
+      // UI highlight
+      document.querySelectorAll('.mode').forEach(m => m.classList.remove('active'));
+      const node = document.querySelector(`.mode[data-mode="${mode}"]`);
+      if (node) node.classList.add('active');
+
+      flashStatus(`Preset applied: ${mode.toUpperCase()}`);
+    }
+
+    modesEl.addEventListener('click', (e) => {
+      const card = e.target.closest('.mode');
+      if (!card) return;
+      setPreset(card.dataset.mode);
+    });
+
+    rateEl.addEventListener('input', () => { rateVal.textContent = rateEl.value; });
+    pitchEl.addEventListener('input', () => { pitchVal.textContent = pitchEl.value; });
+
+    function speak() {
+      const text = textEl.value.trim();
+      if (!text) {
+        flashStatus('Enter some text first.');
+        return;
+      }
+      if (!('speechSynthesis' in window)) {
+        flashStatus('SpeechSynthesis is not supported in this browser.');
+        return;
+      }
+
+      // Stop any existing speech
+      speechSynthesis.cancel();
+
+      const utter = new SpeechSynthesisUtterance(text);
+      const selectedVoiceName = voiceEl.value;
+      const selected = voices.find(v => v.name === selectedVoiceName);
+      if (selected) utter.voice = selected;
+
+      utter.lang = (selected && selected.lang) || (desiredLang || 'en-US');
+      utter.rate = parseFloat(rateEl.value);
+      utter.pitch = parseFloat(pitchEl.value);
+      utter.volume = 1.0;
+
+      utter.onstart = () => flashStatus('Speaking...');
+      utter.onend = () => flashStatus('Done.');
+      utter.onerror = (e) => flashStatus('Error: ' + (e.error || 'unknown'));
+      utter.onpause = () => flashStatus('Paused.');
+      utter.onresume = () => flashStatus('Speaking...');
+
+      currentUtterance = utter;
+      speechSynthesis.speak(utter);
+    }
+
+    function pause() {
+      if (speechSynthesis.speaking && !speechSynthesis.paused) {
+        speechSynthesis.pause();
+      }
+    }
+
+    function resume() {
+      if (speechSynthesis.paused) {
+        speechSynthesis.resume();
+      }
+    }
+
+    function stop() {
+      if (speechSynthesis.speaking || speechSynthesis.paused) {
+        speechSynthesis.cancel();
+        flashStatus('Stopped.');
+      }
+    }
+
+    function flashStatus(msg) {
+      statusEl.textContent = msg;
+    }
+
+    function showVoiceInstallGuide() {
+      const ua = navigator.userAgent.toLowerCase();
+      const isWindows = ua.includes('windows');
+      const isMac = ua.includes('macintosh') || ua.includes('mac os');
+
+      if (isWindows) {
+        try {
+          window.open('ms-settings:speech', '_blank');
+        } catch (_) {}
+        alert('To install more voices on Windows:\n1) Open Settings > Time & language > Speech\n2) Under Voices, add/manage voices\n3) Restart browser and refresh NeoSpeak');
+        return;
+      }
+
+      if (isMac) {
+        alert('To install more voices on macOS:\n1) Open System Settings > Accessibility > Spoken Content\n2) Click System Voice > Manage Voices\n3) Download voices, then restart browser and refresh NeoSpeak');
+        return;
+      }
+
+      alert('Install additional system TTS voices from your OS language/speech settings, then restart the browser and refresh NeoSpeak.');
+    }
+
+    btnSpeak.addEventListener('click', speak);
+    btnPause.addEventListener('click', pause);
+    btnResume.addEventListener('click', resume);
+    btnStop.addEventListener('click', stop);
+    btnGetVoices.addEventListener('click', showVoiceInstallGuide);
+
+    // Voice loading can be async — handle both immediate and event-driven cases
+    if ('speechSynthesis' in window) {
+      loadVoices();
+      if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = () => {
+          loadVoices();
+        };
+      }
+    } else {
+      flashStatus('SpeechSynthesis API not supported in this browser.');
+    }
+
+    // Default select a pleasant preset after voices load
+    setTimeout(() => setPreset('female1'), 600);
+  </script>
+</body>
+</html>
